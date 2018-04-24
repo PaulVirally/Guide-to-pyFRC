@@ -1,0 +1,1 @@
+This is a guide to beginner FRC programmers who wish to use the beautiful language that is Python (3). Everything is in the PDF, however you could typeset it yourself if you really wanted to ;)
