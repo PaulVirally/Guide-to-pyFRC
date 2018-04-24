@@ -1,0 +1,101 @@
+\documentclass[12pt]{article}
+
+% Packages
+\usepackage{forest}
+\usepackage{dirtree}
+\usepackage{xcolor}
+\usepackage{wasysym}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{minted}
+
+\definecolor{bg}{HTML}{282828}
+\usemintedstyle{monokai}
+% \usemintedstyle{autumn}
+
+% Custom colors
+\definecolor{my-orange}{HTML}{fb4d3d}
+\definecolor{my-blue}{HTML}{08748f}
+\definecolor{my-dark}{HTML}{86a873}
+
+% Custom commands
+\newcommand\diricon[1]{{\color{#1}\rule{2ex}{2ex}}}
+\newcommand{\dirfolder}[2]{\diricon{#1}\ {#2}}
+\newcommand{\under}{\char`_}
+\newcommand{\dunder}{\char`\char`_}
+
+% Title page definitions
+\newcommand{\thetitle}{Guide to pyFRC}
+
+% Headers and footers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\thetitle}
+\fancyhead[R]{\thepage}
+
+\begin{document}
+
+\thispagestyle{empty}
+Title page
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Preface}
+Throughout this guide, we will be working to build a fully functional robot. At the end of this guide, section \ref{sec:robot-from-scratch} is where I build a fully functional robot code that is based on the code written throughout this guide. The individual lines are not necessarily explained in that final section, but a walk-through of why certain files were created at what time, and a rough overview of what each file does can be found there. I highly encourage you to read this from start to finish and to not skip any sections even if you think you know what you are doing. Worst case scenario, you get to read some extra code \smiley{}. I think it is really worth it. Plus, it's not like this guide is all that long. Also note that all the code can be found on \href{http://www.github.com/PaulVirally/Guide-to-pyFRC}{my github}.
+
+\section{Introduction}
+The first thing to know about FRC programming (at least when it comes to command based programming), is that every piece of your code will be split up into very distinctive sections. The most important of these sections are the Subsystems and the Commands. Each will be explained later, but for now just know that when you write code for your robot, one of the most important things to remember is to stay organized. Every class, every file, every function belongs in their own little section that should be easily identified.
+
+\section{An explanation of subsytems}
+Subsystems are a larger collection of motors and sensors all linked to doing one specific task on the robot. For example, all robots will have a drivetrain, some might have a claw, maybe an elevator, etc. These are all subsystems. On the drivetrain for example, you might have a set of motors which control the wheels. Then you might have something like an ultrasonic sensor to measure the distance to a wall, a gyro and a magnetic encoder to measure the wheels' displacement. This collection of motors and sensors are what we will call a subsystem. In code, we will need to make an abstraction for the motors and their controllers, and the various sensors on the subsystem. With these abstractions we can then control the motors using the information given off by the sensors. To use these motors, we put these in commands, which we will cover in the next section. This is all to say that the subsystem is the actual thing that has the motors. We can define certain functionality that these subsystems might have (for example, an elevator might have an \texttt{elevate()} and a \texttt{fall()} function) which will then be used by commands. The subsystem is a tool that allows us to abstract this functionality to facilitate very complex behaviour that we want our robot to have.
+
+\section{An explanation of commands}
+Commands are the higher level structures that allow for the actual complex movement of the robot. They use the subsystems' information to calculate various outputs to feed into the subsystems' motor controllers. Commands are essentially actions that you make your robot take. When you want your robot to ``raise the elevator'', you would call the \texttt{raiseRlevator()} command. You can write simpler commands and then combine them together to get more intricate behaviour. For example, say you wanted to write a command to drop a cube that you have in your claw that is attached to you elevator. What you really want to do is first raise the elevator, then open your claw, then lower the elevator back down. Thus, you would need to write a \texttt{raiseElevator()} command, a \texttt{openClaw()} command and a \texttt{lowerElevator()} command. You would then combine all of these into another \texttt{dropCube()} command. We will see later on in section \ref{sec:implementing-commands} how to do this sort of thing.
+
+\newpage
+\section{Basic code structure}
+The following is the basic structure that any command based pyFRC code should follow. This is the structure that this guide will follow.
+\dirtree{%
+    .1 \color{my-blue}{FRC Robot Code}.
+    .2 \color{my-blue}{commands}.
+    .3 \color{my-dark}{A bunch of command files go here}.
+    .2 \color{my-blue}{subsystems}.
+    .3 \color{my-dark}{A bunch of subsystem files go here}.
+    .2 \color{my-blue}{sim}.
+    .3 \color{my-orange}{config.json}.
+    .2 \color{my-blue}{tests}.
+    .3 \color{my-orange}{pyfrcTest.py}.
+    .2 \color{my-orange}{physics.py}.
+    .2 \color{my-orange}{vision.py}.
+    .2 \color{my-orange}{oi.py}.
+    .2 \color{my-orange}{robotMap.py}.
+    .2 \color{my-orange}{robot.py}.
+}\label{fig:basic-code-structure}
+
+\section{Implementing \texttt{robot.py}}
+\texttt{robot.py} is the main part of your robot. This is the file where it all begins. In here you define the very general behaviour of your robot for the following states the robot can be in:
+\begin{itemize}
+    \item \texttt{autonomous}
+    \item \texttt{teleop}
+    \item \texttt{disabled}
+\end{itemize}
+Autonomous is the 15 seconds where your robot must follow preprogrammed instructions, teleop is when your robot is controlled by the driver and disabled is when your robot is doing nothing. Each one of these states has an \texttt{init()} and a \texttt{periodic()} function. The \texttt{init()} is when the robot first enters that state. For example, if you went from disabled to teleop, the state of the robot would evolve as follows:
+
+\begin{center}\(\cdots \rightarrow\) \texttt{disabledPeriodic} \(\rightarrow\) \texttt{teleopInit} \(\rightarrow\) \texttt{teleopPeriodic}
+\end{center}
+
+These are all functions that we need to implement in our \texttt{robot.py}. The robot also has a \texttt{robotInit()} function that we need to worry about. So, putting this together, we need to write some sort of class that implements all of these functions. Here is a start (\href{https://github.com/PaulVirally/Guide-to-pyFRC/blob/master/code-samples/robot-py/robot-0.py}{\texttt{code-samples/robot-py/robot-0.py}}):
+\inputminted[breaklines,bgcolor=bg,frame=lines,framesep=2mm]{python}{code-samples/robot-py/robot-0.py}
+
+\section{Implementing subsystems}
+
+\section{Implementing commands}\label{sec:implementing-commands}
+
+\section{Autonomous}
+\subsection{Pre-recording autonomous}
+\subsection{A real autonomous}
+
+\section{Robot from scratch}\label{sec:robot-from-scratch}
+\end{document}
